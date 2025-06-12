@@ -845,3 +845,488 @@
                 id: 2,
                 title: "Gerar R$ 2.000/mês de renda passiva",
                 target: 2000,
+                current: 450,
+                deadline: "2026-06-30",
+                category: "renda-passiva",
+                motivation: "Reduzir dependência do trabalho ativo e ter mais liberdade de tempo para família",
+                plan: "Focar em FIIs e ações com bom dividend yield, reinvestindo dividendos mensalmente",
+                createdAt: new Date().toISOString()
+            },
+            {
+                id: 3,
+                title: "Eliminar todas as dívidas",
+                target: 15000,
+                current: 12000,
+                deadline: "2025-08-31",
+                category: "reducao-dividas",
+                motivation: "Ter paz mental e liberdade financeira total, sem preocupações com juros",
+                plan: "Usar método bola de neve: quitar cartões primeiro, depois financiamentos",
+                createdAt: new Date().toISOString()
+            }
+        ];
+
+        let currentFilter = 'all';
+        let editingGoalId = null;
+
+        const motivationalQuotes = [
+            "O sucesso é a soma de pequenos esforços repetidos dia após dia. - Robert Collier",
+            "A riqueza não é sobre ter muito dinheiro; é sobre ter muitas opções. - Chris Rock",
+            "O investimento em conhecimento paga os melhores juros. - Benjamin Franklin",
+            "Não poupe o que sobra depois de gastar; gaste o que sobra depois de poupar. - Warren Buffett",
+            "O melhor momento para plantar uma árvore foi há 20 anos. O segundo melhor momento é agora. - Provérbio Chinês"
+        ];
+
+        function rotateQuote() {
+            const quoteElement = document.getElementById('motivationalQuote');
+            const randomQuote = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
+            quoteElement.textContent = randomQuote;
+        }
+
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(value);
+        }
+
+        function formatDate(dateString) {
+            return new Date(dateString).toLocaleDateString('pt-BR');
+        }
+
+        function calculateProgress(current, target) {
+            return Math.min((current / target) * 100, 100);
+        }
+
+        function getGoalStatus(goal) {
+            const today = new Date();
+            const deadline = new Date(goal.deadline);
+            const progress = calculateProgress(goal.current, goal.target);
+            
+            if (progress >= 100) return 'concluida';
+            if (deadline < today && progress < 100) return 'atrasada';
+            return 'em-andamento';
+        }
+
+        function getStatusText(status) {
+            const statusMap = {
+                'em-andamento': 'Em Andamento ⏳',
+                'concluida': 'Concluída ✅',
+                'atrasada': 'Atrasada ⚠️'
+            };
+            return statusMap[status];
+        }
+
+        function getCategoryIcon(category) {
+            const icons = {
+                'patrimonio': '💰',
+                'renda-passiva': '💸',
+                'educacao': '📚',
+                'reducao-dividas': '🎯',
+                'reserva-emergencia': '🛡️',
+                'investimentos': '📈',
+                'aposentadoria': '🏖️'
+            };
+            return icons[category] || '📊';
+        }
+
+        function getCategoryName(category) {
+            const names = {
+                'patrimonio': 'Patrimônio',
+                'renda-passiva': 'Renda Passiva',
+                'educacao': 'Educação Financeira',
+                'reducao-dividas': 'Redução de Dívidas',
+                'reserva-emergencia': 'Reserva de Emergência',
+                'investimentos': 'Investimentos',
+                'aposentadoria': 'Aposentadoria'
+            };
+            return names[category] || category;
+        }
+
+        function getDaysUntilDeadline(deadline) {
+            const today = new Date();
+            const deadlineDate = new Date(deadline);
+            const diffTime = deadlineDate - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            return diffDays;
+        }
+
+        function getAchievements(goal) {
+            const achievements = [];
+            const progress = calculateProgress(goal.current, goal.target);
+            
+            if (progress >= 25) achievements.push('🥉 25% Concluído');
+            if (progress >= 50) achievements.push('🥈 Meio Caminho');
+            if (progress >= 75) achievements.push('🥇 Quase Lá');
+            if (progress >= 100) achievements.push('🏆 Meta Alcançada');
+            
+            const daysUntil = getDaysUntilDeadline(goal.deadline);
+            if (daysUntil <= 30 && daysUntil > 0) achievements.push('⏰ Prazo Próximo');
+            
+            return achievements;
+        }
+
+        function updateSummary() {
+            const total = goals.length;
+            const active = goals.filter(g => getGoalStatus(g) === 'em-andamento').length;
+            const completed = goals.filter(g => getGoalStatus(g) === 'concluida').length;
+            const overdue = goals.filter(g => getGoalStatus(g) === 'atrasada').length;
+            
+            document.getElementById('totalGoals').textContent = total;
+            document.getElementById('activeGoals').textContent = active;
+            document.getElementById('completedGoals').textContent = completed;
+            document.getElementById('overdueGoals').textContent = overdue;
+        }
+
+        function filterGoals(status) {
+            currentFilter = status;
+            
+            // Atualizar botões de filtro
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Encontrar e ativar o botão correto
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            filterButtons.forEach(btn => {
+                if (btn.textContent.includes('Todas') && status === 'all') btn.classList.add('active');
+                if (btn.textContent.includes('Em Andamento') && status === 'em-andamento') btn.classList.add('active');
+                if (btn.textContent.includes('Concluídas') && status === 'concluida') btn.classList.add('active');
+                if (btn.textContent.includes('Atrasadas') && status === 'atrasada') btn.classList.add('active');
+            });
+            
+            renderGoals();
+        }
+
+        function renderGoals() {
+            const container = document.getElementById('goalsContainer');
+            container.innerHTML = '';
+            
+            let filteredGoals = goals;
+            if (currentFilter !== 'all') {
+                filteredGoals = goals.filter(goal => getGoalStatus(goal) === currentFilter);
+            }
+            
+            if (filteredGoals.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h3>🎯 Nenhuma meta encontrada</h3>
+                        <p>Comece criando sua primeira meta SMARTER e transforme seus sonhos em realidade!</p>
+                        <button class="add-goal-btn" onclick="openGoalModal()">
+                            ✨ Criar Primeira Meta
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            filteredGoals.forEach(goal => {
+                const status = getGoalStatus(goal);
+                const progress = calculateProgress(goal.current, goal.target);
+                const icon = getCategoryIcon(goal.category);
+                const categoryName = getCategoryName(goal.category);
+                const daysUntil = getDaysUntilDeadline(goal.deadline);
+                const achievements = getAchievements(goal);
+                
+                const goalCard = document.createElement('div');
+                goalCard.className = 'goal-card';
+                goalCard.innerHTML = `
+                    <div class="goal-actions">
+                        <button class="action-btn" onclick="editGoal(${goal.id})" title="Editar Meta">
+                            ✏️
+                        </button>
+                        <button class="action-btn" onclick="deleteGoal(${goal.id})" title="Excluir Meta">
+                            🗑️
+                        </button>
+                    </div>
+                    
+                    <div class="goal-header">
+                        <div class="goal-title">${icon} ${goal.title}</div>
+                        <div class="goal-status status-${status}">${getStatusText(status)}</div>
+                    </div>
+                    
+                    <div class="goal-details">
+                        <div class="detail-item">
+                            <div class="detail-label">💰 Valor Atual</div>
+                            <div class="detail-value">${formatCurrency(goal.current)}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">🎯 Meta Final</div>
+                            <div class="detail-value">${formatCurrency(goal.target)}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">📅 Prazo</div>
+                            <div class="detail-value">${formatDate(goal.deadline)}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">${status === 'concluida' ? '🎉 Parabéns!' : '💪 Faltam'}</div>
+                            <div class="detail-value">${status === 'concluida' ? 'Meta Alcançada!' : formatCurrency(Math.max(0, goal.target - goal.current))}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="progress-section">
+                        <div class="progress-header">
+                            <span><strong>📊 Progresso</strong></span>
+                            <span><strong>${progress.toFixed(1)}%</strong></span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${progress}%">
+                                ${progress > 15 ? Math.round(progress) + '%' : ''}
+                            </div>
+                        </div>
+                        ${daysUntil > 0 ? `<div style="text-align:center; margin-top: 8px; color: #7f8c8d; font-size: 0.9em;">⏰ ${daysUntil} dias restantes</div>` : ''}
+                    </div>
+                    
+                    ${achievements.length > 0 ? `
+                        <div class="achievements">
+                            ${achievements.map(achievement => `<span class="achievement-badge">${achievement}</span>`).join('')}
+                        </div>
+                    ` : ''}
+                    
+                    ${status !== 'concluida' ? `
+                        <div class="quick-update">
+                            <strong>🔄 Atualização Rápida:</strong>
+                            <input type="number" id="update-${goal.id}" placeholder="Novo valor" min="0" step="0.01">
+                            <button class="update-btn" onclick="quickUpdate(${goal.id})">💾 Atualizar</button>
+                        </div>
+                    ` : ''}
+                    
+                    <div style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.7); border-radius: 10px;">
+                        <div style="margin-bottom: 12px;">
+                            <strong>💭 Motivação:</strong> ${goal.motivation}
+                        </div>
+                        <div>
+                            <strong>📋 Plano de Ação:</strong> ${goal.plan}
+                        </div>
+                    </div>
+                    
+                    <div class="goal-metadata">
+                        <span>🏷️ ${categoryName}</span>
+                        <span>📅 Criada em ${formatDate(goal.createdAt.split('T')[0])}</span>
+                    </div>
+                `;
+                
+                container.appendChild(goalCard);
+            });
+            
+            updateSummary();
+        }
+
+        function openGoalModal(goalId = null) {
+            editingGoalId = goalId;
+            const modal = document.getElementById('goalModal');
+            const title = document.getElementById('modalTitle');
+            
+            if (goalId) {
+                const goal = goals.find(g => g.id === goalId);
+                title.textContent = '✏️ Editar Meta SMARTER';
+                
+                document.getElementById('goalTitle').value = goal.title;
+                document.getElementById('goalTarget').value = goal.target;
+                document.getElementById('goalCurrent').value = goal.current;
+                document.getElementById('goalDeadline').value = goal.deadline;
+                document.getElementById('goalCategory').value = goal.category;
+                document.getElementById('goalMotivation').value = goal.motivation;
+                document.getElementById('goalPlan').value = goal.plan;
+            } else {
+                title.textContent = '📝 Nova Meta SMARTER';
+                clearForm();
+                
+                // Definir data mínima como hoje
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('goalDeadline').min = today;
+            }
+            
+            modal.style.display = 'block';
+            document.getElementById('goalTitle').focus();
+        }
+
+        function closeGoalModal() {
+            document.getElementById('goalModal').style.display = 'none';
+            editingGoalId = null;
+            clearForm();
+        }
+
+        function clearForm() {
+            document.getElementById('goalTitle').value = '';
+            document.getElementById('goalTarget').value = '';
+            document.getElementById('goalCurrent').value = '';
+            document.getElementById('goalDeadline').value = '';
+            document.getElementById('goalCategory').value = 'patrimonio';
+            document.getElementById('goalMotivation').value = '';
+            document.getElementById('goalPlan').value = '';
+        }
+
+        function validateForm() {
+            const title = document.getElementById('goalTitle').value.trim();
+            const target = parseFloat(document.getElementById('goalTarget').value);
+            const current = parseFloat(document.getElementById('goalCurrent').value) || 0;
+            const deadline = document.getElementById('goalDeadline').value;
+            const motivation = document.getElementById('goalMotivation').value.trim();
+            const plan = document.getElementById('goalPlan').value.trim();
+            
+            if (!title) {
+                showNotification('Por favor, insira o título da meta.', 'error');
+                return false;
+            }
+            
+            if (!target || target <= 0) {
+                showNotification('Por favor, insira um valor alvo válido.', 'error');
+                return false;
+            }
+            
+            if (current < 0) {
+                showNotification('O valor atual não pode ser negativo.', 'error');
+                return false;
+            }
+            
+            if (!deadline) {
+                showNotification('Por favor, selecione uma data limite.', 'error');
+                return false;
+            }
+            
+            const today = new Date();
+            const deadlineDate = new Date(deadline);
+            if (deadlineDate <= today) {
+                showNotification('A data limite deve ser no futuro.', 'error');
+                return false;
+            }
+            
+            if (!motivation) {
+                showNotification('Por favor, descreva sua motivação emocional.', 'error');
+                return false;
+            }
+            
+            if (!plan) {
+                showNotification('Por favor, descreva seu plano de ação.', 'error');
+                return false;
+            }
+            
+            return true;
+        }
+
+        function saveGoal() {
+            if (!validateForm()) return;
+            
+            const title = document.getElementById('goalTitle').value.trim();
+            const target = parseFloat(document.getElementById('goalTarget').value);
+            const current = parseFloat(document.getElementById('goalCurrent').value) || 0;
+            const deadline = document.getElementById('goalDeadline').value;
+            const category = document.getElementById('goalCategory').value;
+            const motivation = document.getElementById('goalMotivation').value.trim();
+            const plan = document.getElementById('goalPlan').value.trim();
+            
+            if (editingGoalId) {
+                // Editar meta existente
+                const goalIndex = goals.findIndex(g => g.id === editingGoalId);
+                goals[goalIndex] = {
+                    ...goals[goalIndex],
+                    title,
+                    target,
+                    current,
+                    deadline,
+                    category,
+                    motivation,
+                    plan
+                };
+                showNotification('✅ Meta atualizada com sucesso!');
+            } else {
+                // Criar nova meta
+                const newGoal = {
+                    id: Date.now(),
+                    title,
+                    target,
+                    current,
+                    deadline,
+                    category,
+                    motivation,
+                    plan,
+                    createdAt: new Date().toISOString()
+                };
+                goals.push(newGoal);
+                showNotification('🎉 Nova meta criada com sucesso!');
+            }
+            
+            renderGoals();
+            closeGoalModal();
+        }
+
+        function editGoal(goalId) {
+            openGoalModal(goalId);
+        }
+
+        function deleteGoal(goalId) {
+            const goal = goals.find(g => g.id === goalId);
+            if (confirm(`Tem certeza que deseja excluir a meta "${goal.title}"?\n\nEsta ação não pode ser desfeita.`)) {
+                goals = goals.filter(goal => goal.id !== goalId);
+                renderGoals();
+                showNotification('🗑️ Meta excluída com sucesso.');
+            }
+        }
+
+        function quickUpdate(goalId) {
+            const newValue = parseFloat(document.getElementById(`update-${goalId}`).value);
+            
+            if (isNaN(newValue) || newValue < 0) {
+                showNotification('Por favor, insira um valor válido.', 'error');
+                return;
+            }
+            
+            const goalIndex = goals.findIndex(g => g.id === goalId);
+            const oldValue = goals[goalIndex].current;
+            goals[goalIndex].current = newValue;
+            
+            renderGoals();
+            
+            const difference = newValue - oldValue;
+            if (difference > 0) {
+                showNotification(`📈 Progresso atualizado! +${formatCurrency(difference)}`);
+            } else if (difference < 0) {
+                showNotification(`📉 Valor ajustado: ${formatCurrency(difference)}`);
+            } else {
+                showNotification('💾 Valor atualizado!');
+            }
+        }
+
+        // Fechar modal clicando fora
+        window.onclick = function(event) {
+            const modal = document.getElementById('goalModal');
+            if (event.target == modal) {
+                closeGoalModal();
+            }
+        }
+
+        // Atalhos de teclado
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeGoalModal();
+            }
+            if (event.ctrlKey && event.key === 'n') {
+                event.preventDefault();
+                openGoalModal();
+            }
+        });
+
+        // Rotacionar frases motivacionais a cada 10 segundos
+        setInterval(rotateQuote, 10000);
+
+        // Inicializar aplicação
+        document.addEventListener('DOMContentLoaded', function() {
+            renderGoals();
+            rotateQuote();
+        });
+
+        // Inicializar
+        renderGoals();
